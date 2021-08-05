@@ -1,0 +1,15 @@
+﻿#pragma kernel Affine
+
+RWTexture2D<float4> Input;
+float H, V, X, Y, A, B, C, D;
+
+[numthreads(32, 32, 1)]
+void Affine(uint3 id : SV_DispatchThreadID) {
+    float adX = id.x + H - X;
+    float adY = id.y + V - Y;
+
+    Input[id.xy] = Input[uint2(
+        A * adX + B * adY + X,
+        C * adX + D * adY + Y
+    )];
+}

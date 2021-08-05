@@ -1,0 +1,8 @@
+﻿#pragma kernel Clear
+
+RWTexture2D<float4> Input;
+
+[numthreads(32, 32, 1)]
+void Clear(uint3 id : SV_DispatchThreadID) {
+    Input[id.xy] = float4(0.0, 0.0, 0.0, 0.0);
+}
