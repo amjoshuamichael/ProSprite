@@ -17,13 +17,8 @@ public class PSRotate : ProSprite
 
         timeInSeconds += Time.deltaTime;
 
-        DrawCircles(new Vector4[] {
-            new Vector4(
-                width / 2,
-                height / 2,
-                10,
-                2
-            )
+        DrawCircles(new Circle[] {
+            new Circle( width / 2, height / 2, 10, 2 )
         });
 
         Transform(0, 0, width / 2, 0, 0.5f, 0, 0, 1f);

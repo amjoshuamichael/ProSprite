@@ -1,7 +1,8 @@
 ﻿#pragma kernel Stroke
 
 RWTexture2D<float4> Input;
-float4 color;
+RWStructuredBuffer<float4> Pallete;
+int color;
 
 [numthreads(32, 32, 1)]
 void Stroke(uint3 id : SV_DispatchThreadID) {
@@ -11,7 +12,7 @@ void Stroke(uint3 id : SV_DispatchThreadID) {
             Input[uint2 (id.x, id.y - 1)].w == 1 ||
             Input[uint2 (id.x, id.y + 1)].w == 1) {
 
-            Input[id.xy] = color;
+            Input[id.xy] = Pallete[color];
         }
     }
 }

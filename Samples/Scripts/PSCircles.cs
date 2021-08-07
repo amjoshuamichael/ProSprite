@@ -21,16 +21,16 @@ public class PSCircles : ProSprite
 
         timeInSeconds += Time.deltaTime;
 
-        DrawCircles(new Vector4[] {
-            new Vector4(
-                Mathf.Sin(timeInSeconds) * radiusOfCircleMovement + width / 2,
-                Mathf.Cos(timeInSeconds) * radiusOfCircleMovement + height / 2,
+        DrawCircles(new Circle[] {
+            new Circle(
+                (int)(Mathf.Sin(timeInSeconds) * radiusOfCircleMovement) + width / 2,
+                (int)(Mathf.Cos(timeInSeconds) * radiusOfCircleMovement) + height / 2,
                 majorCircleRadius,
                 0
             ),
-            new Vector4(
-                Mathf.Sin(timeInSeconds - minorCircleDelay) * radiusOfCircleMovement + width / 2,
-                Mathf.Cos(timeInSeconds - minorCircleDelay) * radiusOfCircleMovement + height / 2,
+            new Circle(
+                (int)(Mathf.Sin(timeInSeconds - minorCircleDelay) * radiusOfCircleMovement) + width / 2,
+                (int)(Mathf.Cos(timeInSeconds - minorCircleDelay) * radiusOfCircleMovement) + height / 2,
                 minorCircleRadius,
                 1
             )

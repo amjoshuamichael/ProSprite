@@ -1,9 +1,19 @@
 ﻿#pragma kernel Circles
 
 RWTexture2D<float4> Input;
+RWStructuredBuffer<float4> Pallete;
 int count;
-float4 circles[8];
-float4 colors[4];
+
+// These integers take the place of the "circle" struct in the corresponding c# scripts. 
+// Their components correspond to the following properties of that class:
+//
+// x : x
+// y : y
+// z : radius
+// w : color
+//
+// Translating the data this way is more optimal for the GPU.
+int4 circles[8];
 
 [numthreads(32, 32, 1)]
 void Circles(uint3 id : SV_DispatchThreadID) {
@@ -12,7 +22,7 @@ void Circles(uint3 id : SV_DispatchThreadID) {
         int yOffset = id.y - circles[i].y;
         
         if (xOffset * xOffset + yOffset * yOffset < circles[i].z) {
-            Input[id.xy] = colors[circles[i].w];
+            Input[id.xy] = Pallete[circles[i].w];
         }
     }
 }
