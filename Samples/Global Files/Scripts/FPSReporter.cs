@@ -12,24 +12,30 @@ public class FPSReporter : MonoBehaviour
 
     private void Start() {
         text = GetComponent<Text>();
-        Camera.onPreRender += IncrementReportInterval;
+        Camera.onPreRender += CheckToReport;
     }
 
-    private void IncrementReportInterval(Camera cam) {
+    private void FixedUpdate() {
         reportTimer++;
+    }
 
+    private void CheckToReport(Camera cam) {
         if (reportTimer >= reportInterval) {
             reportTimer = 0;
-            Report();
+
+            if (text != null)
+                Report();
         }
     }
 
     private void Report() {
-        if (text != null)
-            text.text = frameRate().ToString() + " fps";
+        reportedFrameRate = frameRate();
+        text.text = reportedFrameRate.ToString() + " fps";
     }
 
-    int frameRate() {
+    public static int frameRate() {
         return (int)(1.0f / Time.deltaTime);
     }
+
+    public int reportedFrameRate;
 }

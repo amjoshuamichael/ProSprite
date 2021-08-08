@@ -91,6 +91,7 @@ public abstract class ProSprite : MonoBehaviour {
     protected void DrawCircles(Circle[] circles) {
         shaders[(int)S.Circles].SetInt("count", 8);
         shaders[(int)S.Circles].SetInts("circles", circleArrayToInt4Array(circles));
+        
         DispatchShader((int)S.Circles);
     }
 
