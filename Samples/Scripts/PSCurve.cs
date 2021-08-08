@@ -11,13 +11,9 @@ public class PSCurve : ProSprite {
         Setup(width, height);
     }
 
-    void Update() {
-        Clear();
-
+    override protected void Render() {
         timeInSeconds += Time.deltaTime;
-
         DrawLine(Mathf.Sin(timeInSeconds), 0, height / 2, 3, 0, width, 0, height);
-
         Stroke(4);
     }
 }

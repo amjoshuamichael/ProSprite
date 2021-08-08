@@ -12,17 +12,13 @@ public class PSRotate : ProSprite
         Setup(width, height);
     }
 
-    void Update() {
-        Clear();
-
+    override protected void Render() {
         timeInSeconds += Time.deltaTime;
 
-        DrawCircles(new Circle[] {
-            new Circle( width / 2, height / 2, 10, 2 )
-        });
+        DrawCircles(new Circle[] { new Circle( center, 64, 2 ) });
 
-        Transform(0, 0, width / 2, 0, 0.5f, 0, 0, 1f);
-        Rotate(timeInSeconds, width / 2, height / 2);
+        Scale(center, new Vector2(1.5f, 0.5f));
+        Rotate(center, timeInSeconds);
 
         Stroke(4);
     }

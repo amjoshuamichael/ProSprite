@@ -7,8 +7,8 @@ int count;
 // These integers take the place of the "circle" struct in the corresponding c# scripts. 
 // Their components correspond to the following properties of that class:
 //
-// x : x
-// y : y
+// x : position.x
+// y : position.y
 // z : radius
 // w : color
 //

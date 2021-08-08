@@ -1,9 +1,7 @@
-﻿using System.Drawing;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.ProSprite;
 
-public class ProSprite : MonoBehaviour {
+public abstract class ProSprite : MonoBehaviour {
     RenderTexture renderTexture;
 
     Object[] shadersAsAssets;
@@ -14,16 +12,31 @@ public class ProSprite : MonoBehaviour {
 
     Vector2Int chunkCount;
     const int pixelsPerUnit = 16;
+    protected Vector2Int center;
 
-    public enum S { Circles, Stroke, Curve, Affine, Texture, Clear }
+    public enum S { Clear, Circles, Stroke, Curve, Affine, Texture }
 
     public void Setup(int width, int height) {
         SetChunkCount(width, height);
+        center = new Vector2Int(width / 2, height / 2);
+
         SpriteRenderer renderer = GenerateSpriteRenderer(width, height);
         renderTexture = GenerateRenderTexture(width, height, renderer);
+
         CreatePalleteBuffer();
         InstantiateAndOrganizeComputeShaders();
+
+        Camera.onPreRender += CallRender;
     }
+
+    private void CallRender(Camera camera) {
+        if(camera == Camera.main) {
+            Clear();
+            Render();
+        }
+    }
+
+    protected abstract void Render();
 
     private void CreatePalleteBuffer() {
         palleteBuffer = new ComputeBuffer(Pallete.pallete.Length, sizeof(float) * 4);
@@ -78,12 +91,12 @@ public class ProSprite : MonoBehaviour {
     protected void DrawCircles(Circle[] circles) {
         shaders[(int)S.Circles].SetInt("count", 8);
         shaders[(int)S.Circles].SetInts("circles", circleArrayToInt4Array(circles));
-        shaders[(int)S.Circles].Dispatch(kernels[(int)S.Circles], chunkCount.x, chunkCount.y, 1);
+        DispatchShader((int)S.Circles);
     }
 
     protected void Stroke(int color) {
         shaders[(int)S.Stroke].SetInt("color", color);
-        shaders[(int)S.Stroke].Dispatch(kernels[(int)S.Stroke], chunkCount.x, chunkCount.y, 1);
+        DispatchShader((int)S.Stroke);
     }
 
     protected void DrawLine(float a, float b, float c, int color, int xMin, int xMax, int yMin, int yMax) {
@@ -95,7 +108,7 @@ public class ProSprite : MonoBehaviour {
         shaders[(int)S.Curve].SetInt("xMax", xMax);
         shaders[(int)S.Curve].SetInt("yMin", yMin);
         shaders[(int)S.Curve].SetInt("yMax", yMax);
-        shaders[(int)S.Curve].Dispatch(kernels[(int)S.Curve], chunkCount.x, chunkCount.y, 1);
+        DispatchShader((int)S.Curve);
     }
 
     protected void Transform(float H, float V, float X, float Y, float A, float B, float C, float D) {
@@ -107,23 +120,39 @@ public class ProSprite : MonoBehaviour {
         shaders[(int)S.Affine].SetFloat("B", B);
         shaders[(int)S.Affine].SetFloat("C", C);
         shaders[(int)S.Affine].SetFloat("D", D);
-        shaders[(int)S.Affine].Dispatch(kernels[(int)S.Affine], chunkCount.x, chunkCount.y, 1);
+        DispatchShader((int)S.Affine);
     }
 
     protected void DrawTexture(Texture2D texture) {
         shaders[(int)S.Texture].SetTexture(kernels[(int)S.Texture], "Tex", texture);
-        shaders[(int)S.Texture].Dispatch(kernels[(int)S.Texture], chunkCount.x, chunkCount.y, 1);
+        DispatchShader((int)S.Texture);
     }
 
-    protected void Clear() {
-        shaders[(int)S.Clear].Dispatch(kernels[(int)S.Clear], chunkCount.x, chunkCount.y, 1);
+    private void Clear() {
+        DispatchShader((int)S.Clear);
     }
 
-    protected void Rotate(float angleInRadians, int anchorPointX, int anchorPointY) {
+    protected void Translate(Vector2 position) {
+        Transform(position.x, position.y, 0, 0, 1, 0, 0, 1);
+    }
+
+    protected void Rotate(Vector2 anchorPoint, float angleInRadians) {
         float generalScale = Mathf.Cos(angleInRadians);
         float generalSheer = Mathf.Sin(angleInRadians);
 
-        Transform(0, 0, anchorPointX, anchorPointY, generalScale, generalSheer, - generalSheer, generalScale);
+        Transform(0, 0, anchorPoint.x, anchorPoint.y, generalScale, generalSheer, -generalSheer, generalScale);
+    }
+
+    protected void Scale(Vector2 anchorPoint, Vector2 scaleAmount) {
+        Transform(0, 0, anchorPoint.x, anchorPoint.y, 1 / scaleAmount.x, 0, 0, 1 / scaleAmount.y);
+    }
+
+    protected void Scale(Vector2 anchorPoint, float scaleAmount) {
+        Transform(0, 0, anchorPoint.x, anchorPoint.y, scaleAmount, 0, 0, scaleAmount);
+    }
+
+    private void DispatchShader(int index) {
+        shaders[index].Dispatch(kernels[index], chunkCount.x, chunkCount.y, 1);
     }
 
     private void OnDisable() {
@@ -131,30 +160,32 @@ public class ProSprite : MonoBehaviour {
     }
 
     protected struct Circle {
-        public int x;
-        public int y;
+        public Vector2Int position;
         public int radius;
         public int color;
 
-        public Circle(int _x, int _y, int _radius, int _color) {
-            x = _x;
-            y = _y;
+        public Circle(Vector2Int _position, int _radius, int _color) {
+            position = _position;
             radius = _radius;
             color = _color;
         }
 
         public static implicit operator Vector4(Circle circle) => 
-            new Vector4 (circle.x, circle.y, circle.radius, circle.color);
+            new Vector4 (circle.position.x, circle.position.y, circle.radius, circle.color);
     }
 
+    // Because of the way commuication between hlsl and c# works, in order to modify an array of int4s
+    // in the Circles shader, we don't pass in an array of Vector4s to the ComputeShader.SetInts function.
+    // Intead, we input an array four times the size of the corresponding hlsl array, where each int4
+    // corresponds to a set of four consecutive integers.
     private static int[] circleArrayToInt4Array(Circle[] circleArray) {
         int[] intArray = new int[circleArray.Length * 4];
 
         for (int i = 0; i < circleArray.Length; i++) {
             int intArrayLocation = i * 4;
 
-            intArray[intArrayLocation]     = circleArray[i].x;
-            intArray[intArrayLocation + 1] = circleArray[i].y;
+            intArray[intArrayLocation]     = circleArray[i].position.x;
+            intArray[intArrayLocation + 1] = circleArray[i].position.y;
             intArray[intArrayLocation + 2] = circleArray[i].radius;
             intArray[intArrayLocation + 3] = circleArray[i].color;
         }

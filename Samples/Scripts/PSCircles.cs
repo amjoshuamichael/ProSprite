@@ -16,26 +16,27 @@ public class PSCircles : ProSprite
         Setup(width, height);
     }
 
-    void Update() {
-        Clear();
-
+    override protected void Render() {
         timeInSeconds += Time.deltaTime;
 
-        DrawCircles(new Circle[] {
-            new Circle(
-                (int)(Mathf.Sin(timeInSeconds) * radiusOfCircleMovement) + width / 2,
-                (int)(Mathf.Cos(timeInSeconds) * radiusOfCircleMovement) + height / 2,
-                majorCircleRadius,
-                0
-            ),
-            new Circle(
-                (int)(Mathf.Sin(timeInSeconds - minorCircleDelay) * radiusOfCircleMovement) + width / 2,
-                (int)(Mathf.Cos(timeInSeconds - minorCircleDelay) * radiusOfCircleMovement) + height / 2,
-                minorCircleRadius,
-                1
-            )
-        });
+        DrawCircles(new Circle[] { majorCircle(), minorCircle() });
 
         Stroke(4);
+    }
+
+    private Circle majorCircle() {
+        Vector2Int position = new Vector2Int();
+        position.x = (int)(Mathf.Sin(timeInSeconds) * radiusOfCircleMovement) + center.x;
+        position.y = (int)(Mathf.Cos(timeInSeconds) * radiusOfCircleMovement) + center.y;
+
+        return new Circle(position, majorCircleRadius, 0);
+    }
+
+    private Circle minorCircle() {
+        Vector2Int position = new Vector2Int();
+        position.x = (int)(Mathf.Sin(timeInSeconds - minorCircleDelay) * radiusOfCircleMovement) + center.x;
+        position.y = (int)(Mathf.Cos(timeInSeconds - minorCircleDelay) * radiusOfCircleMovement) + center.y;
+
+        return new Circle(position, minorCircleRadius, 1);
     }
 }
