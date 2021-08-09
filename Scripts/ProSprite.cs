@@ -130,7 +130,6 @@ public abstract class ProSprite : MonoBehaviour {
     }
 
     private void Clear() {
-        Debug.Log("cleared");
         DispatchShader((int)S.Clear);
     }
 
@@ -154,7 +153,6 @@ public abstract class ProSprite : MonoBehaviour {
     }
 
     private void DispatchShader(int index) {
-        Debug.Log(index);
         shaders[index].Dispatch(kernels[index], chunkCount.x, chunkCount.y, 1);
     }
 
