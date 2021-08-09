@@ -73,7 +73,7 @@ public abstract class ProSprite : MonoBehaviour {
         renderer.sprite = generateBlankSpriteAtSize(width, height);
         renderer.drawMode = SpriteDrawMode.Sliced;
         renderer.size = new Vector2(width / pixelsPerUnit, height / pixelsPerUnit);
-        renderer.material = Resources.Load<Material>("ProSprite/Texture");
+        renderer.material = Resources.Load<Material>("ProSprite/Materials/Texture");
         return renderer;
     }
 
@@ -91,7 +91,7 @@ public abstract class ProSprite : MonoBehaviour {
     protected void DrawCircles(Circle[] circles) {
         shaders[(int)S.Circles].SetInt("count", 8);
         shaders[(int)S.Circles].SetInts("circles", circleArrayToInt4Array(circles));
-        
+
         DispatchShader((int)S.Circles);
     }
 

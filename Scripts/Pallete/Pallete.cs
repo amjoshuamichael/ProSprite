@@ -51,32 +51,51 @@ namespace UnityEngine.ProSprite {
 }
 
 static class PalleteSettings {
-    const string palletePath = "ProSprite/pallete";
+    const string palletePath = "ProSprite/Scripts/Pallete/pallete";
 
 #if UNITY_EDITOR
     public static void SavePallete(SerializedProperty newPalleteProperty) {
-        Texture2D palleteAtlas = Resources.Load(palletePath) as Texture2D;
+        Texture2D palleteAtlas = GetTextureAtlas();
         palleteAtlas.Resize(newPalleteProperty.arraySize, 1);
 
         Color[] palleteColors = SerializedPropertyToColorArray(newPalleteProperty);
 
         palleteAtlas.SetPixels(palleteColors);
         palleteAtlas.Apply();
+
+        SaveTextureToPalletePNG(palleteAtlas);
     }
 
     private static Color[] SerializedPropertyToColorArray(SerializedProperty newPalleteProperty) {
         Color[] palleteColors = new Color[newPalleteProperty.arraySize];
+
         for (int i = 0; i < newPalleteProperty.arraySize; i++)
             palleteColors[i] = newPalleteProperty.GetArrayElementAtIndex(i).colorValue;
+
         return palleteColors;
+    }
+
+    private static void SaveTextureToPalletePNG(Texture2D texture) {
+        byte[] bytes = texture.EncodeToPNG();
+        File.WriteAllBytes(GetFullPalleteAtlasPath(), bytes);
+    }
+
+    private static string GetFullPalleteAtlasPath() {
+        return Application.dataPath + "/Resources/" + palletePath + ".png";
     }
 #endif
 
     public static Color[] LoadPallete() {
-        Texture2D palleteAtlas = Resources.Load(palletePath) as Texture2D;
+        Texture2D palleteAtlas = GetTextureAtlas();
         Color[] palleteColors = palleteAtlas.GetPixels();
 
         return palleteColors;
+    }
+
+    private static Texture2D GetTextureAtlas() {
+        Texture2D texture = new Texture2D(64, 1, TextureFormat.ARGB32, true);
+        texture = (Texture2D)Resources.Load(palletePath);
+        return texture;
     }
 }
 
