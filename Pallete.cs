@@ -3,6 +3,11 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using System;
+using System.Text;
+using System.Collections;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Runtime.Serialization;
 
 namespace UnityEngine.ProSprite {
     public class Pallete {
@@ -40,96 +45,99 @@ namespace UnityEngine.ProSprite {
         }
 
         private static void InstantiatePallete() {
-            _pallete = PalleteSettingsProvider.palleteAsArray();
+            _pallete = PalleteSettings.LoadPallete();
         }
     }
 }
 
+static class PalleteSettings {
+    const string palletePath = "ProSprite/pallete";
 
-class PalleteSettings : ScriptableObject {
-    public const string PalleteSettingsPath = "ProSprite/PalleteSettings";
-    [SerializeField] public Color[] palleteColors;
+#if UNITY_EDITOR
+    public static void SavePallete(SerializedProperty newPalleteProperty) {
+        Texture2D palleteAtlas = Resources.Load(palletePath) as Texture2D;
+        palleteAtlas.Resize(newPalleteProperty.arraySize, 1);
 
-    public static SerializedObject GetSerializedSettings() {
-        Object settings = PalleteSettingsAsset();
-        return new SerializedObject(settings);
+        Color[] palleteColors = SerializedPropertyToColorArray(newPalleteProperty);
+
+        palleteAtlas.SetPixels(palleteColors);
+        palleteAtlas.Apply();
     }
 
-    public static void SavePalleteSettings(Color[] newPallete) {
-        PalleteSettings settings = PalleteSettingsAsset();
-        settings.palleteColors = newPallete;
+    private static Color[] SerializedPropertyToColorArray(SerializedProperty newPalleteProperty) {
+        Color[] palleteColors = new Color[newPalleteProperty.arraySize];
+        for (int i = 0; i < newPalleteProperty.arraySize; i++)
+            palleteColors[i] = newPalleteProperty.GetArrayElementAtIndex(i).colorValue;
+        return palleteColors;
     }
+#endif
 
-    public static PalleteSettings PalleteSettingsAsset() {
-        return Resources.Load<PalleteSettings>(PalleteSettingsPath);
+    public static Color[] LoadPallete() {
+        Texture2D palleteAtlas = Resources.Load(palletePath) as Texture2D;
+        Color[] palleteColors = palleteAtlas.GetPixels();
+
+        return palleteColors;
     }
 }
 
+#if UNITY_EDITOR
+class PalleteSettingsContainer : ScriptableObject {
+    public Color[] pallete;
+}
+
 class PalleteSettingsProvider : SettingsProvider {
-    private static SerializedObject PalleteSettings;
-    [SerializeField] private static SerializedProperty pallete;
-    private Color[] oldPalleteSettings;
+    private static PalleteSettingsContainer palleteContainer;
+    private static SerializedProperty palleteProperty;
 
     public PalleteSettingsProvider(string path, SettingsScope scope = SettingsScope.User) : base(path, scope) { }
 
     [SettingsProvider]
     public static SettingsProvider CreatePalleteSettingsProvider() {
         var provider = new PalleteSettingsProvider("Project/ProSprite Pallete", SettingsScope.Project);
-        provider.keywords = new string[] {"Color", "ProSprite", "Pallete"};
+        provider.keywords = new string[] { "Color", "ProSprite", "Pallete" };
         return provider;
     }
 
     public override void OnActivate(string searchContext, VisualElement rootElement) {
-        LoadPalleteSettingsAndPallete();
+        LoadPalleteContainer();
     }
 
     public override void OnDeactivate() {
-        Color[] newPalleteSettings = palleteAsArray();
-        CheckIfPalleteHasMoreThanOneTransparency(newPalleteSettings);
-        global::PalleteSettings.SavePalleteSettings(newPalleteSettings);
-        base.OnDeactivate();
+        if(palleteContainer != null) {
+            WarnIfPalleteHasMoreThanOneTransparency();
+            PalleteSettings.SavePallete(palleteProperty);
+            base.OnDeactivate();
+        }
     }
 
-    private static void CheckIfPalleteHasMoreThanOneTransparency(Color[] pallete) {
+    private static void WarnIfPalleteHasMoreThanOneTransparency() {
         int numberOfTransparencies = 0;
 
-        for (int i = 0; i < pallete.Length; i++)
-            if (pallete[i].a == 0)
-                numberOfTransparencies++;   
+        for (int i = 0; i < palleteContainer.pallete.Length; i++)
+            if (palleteContainer.pallete[i].a == 0)
+                numberOfTransparencies++;
 
         if (numberOfTransparencies >= 2)
             Debug.LogWarning("In the ProSprite Pallete, there is more than one swatch that is completely clear. This is redundant. Did you mean to do this?");
     }
 
     public override void OnInspectorUpdate() {
-        if (pallete.arraySize > 64) {
-            pallete.arraySize = 64;
-        }
+        
     }
 
     public override void OnGUI(string searchContext) {
-        EditorGUILayout.PropertyField(pallete, palleteGUIStyle);
+        EditorGUILayout.PropertyField(palleteProperty, palleteGUIStyle());
     }
 
-    private static GUIContent palleteGUIStyle { 
-        get {
-            return new GUIContent("Pallete");
-        }
+    private static GUIContent palleteGUIStyle() {
+        return new GUIContent("Pallete");
     }
 
-    public static Color[] palleteAsArray() {
-        if (pallete == null) LoadPalleteSettingsAndPallete();
+    private static void LoadPalleteContainer() {
+        palleteContainer = ScriptableObject.CreateInstance<PalleteSettingsContainer>();
+        palleteContainer.pallete = PalleteSettings.LoadPallete();
 
-        Color[] palleteAsArray = new Color[pallete.arraySize];
-
-        for (int i = 0; i < pallete.arraySize; i++)
-            palleteAsArray[i] = pallete.GetArrayElementAtIndex(i).colorValue;
-
-        return palleteAsArray;
-    }
-
-    private static void LoadPalleteSettingsAndPallete() {
-        PalleteSettings = global::PalleteSettings.GetSerializedSettings();
-        pallete = PalleteSettings.FindProperty("palleteColors");
+        palleteProperty = new SerializedObject(palleteContainer).FindProperty("pallete");
     }
 }
+#endif
