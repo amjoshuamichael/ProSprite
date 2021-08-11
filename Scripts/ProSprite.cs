@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEditor;
 using UnityEngine.ProSprite;
 
 public abstract class ProSprite : MonoBehaviour {
