@@ -5,7 +5,7 @@ float a, b, c, y;
 float4 color;
 int xMin, xMax, yMin, yMax;
 
-[numthreads(32,1,1)]
+[numthreads(8,1,1)]
 void Curve (uint3 id : SV_DispatchThreadID) {
     if (xMin < id.x && id.x < xMax) {
         y = a * id.x * id.x + b * id.x + c;

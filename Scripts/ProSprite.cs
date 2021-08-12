@@ -17,6 +17,8 @@ public abstract class ProSprite : MonoBehaviour {
 
     public enum S { Clear, Circles, Stroke, Curve, Affine, Texture }
 
+    int dispatchSize = 8;
+
     public void Setup(int width, int height) {
         SetChunkCount(width, height);
         center = new Vector2Int(width / 2, height / 2);
@@ -86,7 +88,7 @@ public abstract class ProSprite : MonoBehaviour {
     }
 
     private void SetChunkCount(int width, int height) {
-        chunkCount = new Vector2Int(width / 32, height / 32);
+        chunkCount = new Vector2Int(width / dispatchSize, height / dispatchSize);
     }
 
     protected void DrawCircles(Circle[] circles) {

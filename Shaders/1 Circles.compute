@@ -15,7 +15,7 @@ int count;
 // Translating the data this way is more optimal for the GPU.
 int4 circles[8];
 
-[numthreads(32, 32, 1)]
+[numthreads(8, 8, 1)]
 void Circles(uint3 id : SV_DispatchThreadID) {
     for (int i = 0; i < count; i++) {
         int xOffset = id.x - circles[i].x;
