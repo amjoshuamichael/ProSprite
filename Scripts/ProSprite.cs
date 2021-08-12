@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
-using UnityEditor;
 using UnityEngine.ProSprite;
+using System.Runtime.InteropServices;
 
 public abstract class ProSprite : MonoBehaviour {
     RenderTexture renderTexture;
@@ -19,7 +19,11 @@ public abstract class ProSprite : MonoBehaviour {
 
     int dispatchSize = 8;
 
+    [DllImport("__Internal")] private static extern void Hello();
+
     public void Setup(int width, int height) {
+        Hello();
+
         SetChunkCount(width, height);
         center = new Vector2Int(width / 2, height / 2);
 
