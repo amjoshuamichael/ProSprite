@@ -1,19 +1,13 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class PSCurve : ProSprite {
+public class PSCurve : MonoBehaviour{
+    [SerializeField] private ProSprite proSprite;
+
     float timeInSeconds = 0;
-    const int width = 32;
-    const int height = 32;
 
-    void Start() {
-        Setup(width, height);
-    }
-
-    override protected void Render() {
+    private void OnWillRenderObject() {
         timeInSeconds += Time.deltaTime;
-        DrawLine(Mathf.Sin(timeInSeconds), 0, height / 2, 3, 0, width, 0, height);
-        Stroke(4);
+        proSprite.DrawLine(Mathf.Sin(timeInSeconds), 0, proSprite.height / 2, 3, 0, proSprite.width, 0, proSprite.height);
+        proSprite.Stroke(4);
     }
 }

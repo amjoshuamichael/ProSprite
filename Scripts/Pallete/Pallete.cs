@@ -1,13 +1,7 @@
-﻿using System.Numerics;
-using System.IO;
+﻿using System.IO;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
-using System;
-using System.Text;
-using System.Collections;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Runtime.Serialization;
 
 namespace UnityEngine.ProSprite {
     public class Pallete {

@@ -3,7 +3,7 @@
 RWTexture2D<float4> Input;
 float H, V, X, Y, A, B, C, D;
 
-[numthreads(8, 8, 1)]
+[numthreads(32, 32, 1)]
 void Affine(uint3 id : SV_DispatchThreadID) {
     float adX = id.x + H - X;
     float adY = id.y + V - Y;

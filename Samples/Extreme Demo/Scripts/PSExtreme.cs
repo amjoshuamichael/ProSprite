@@ -1,18 +1,14 @@
 ﻿using UnityEngine;
+using UnityEngine.ProSprite;
 
-public class PSExtreme : ProSprite {
-    const int width = 2000;
-    const int height = 1000;
+public class PSExtreme : MonoBehaviour {
+    [SerializeField] private ProSprite proSprite;
 
     const int circleRadius = 50;
 
     public int numberOfCircles;
 
-    void Start() {
-        Setup(width, height);
-    }
-
-    protected override void Render() {
+    private void OnWillRenderObject() {
         int numberOfBatches = numberOfCircles / 8;
 
         for (int i = 0; i < numberOfBatches; i++) {
@@ -21,7 +17,7 @@ public class PSExtreme : ProSprite {
             for (int j = 0; j < 8; j++)
                 circles[j] = GenerateBigCircle();
 
-            DrawCircles(circles);
+            proSprite.DrawCircles(circles);
         }
     }
 

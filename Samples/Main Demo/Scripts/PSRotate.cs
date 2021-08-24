@@ -1,25 +1,19 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.ProSprite;
 
-public class PSRotate : ProSprite
-{
+public class PSRotate : MonoBehaviour {
+    [SerializeField] private ProSprite proSprite;
+
     float timeInSeconds = 0;
-    const int width = 32;
-    const int height = 32;
 
-    void Start() {
-        Setup(width, height);
-    }
-
-    override protected void Render() {
+    void OnWillRenderObject() {
         timeInSeconds += Time.deltaTime;
 
-        DrawCircles(new Circle[] { new Circle( center, 64, 2 ) });
+        proSprite.DrawCircles(new Circle[] { new Circle( proSprite.center, 64, 2 ) });
 
-        Scale(center, new Vector2(1.5f, 0.5f));
-        Rotate(center, timeInSeconds);
+        proSprite.Scale(proSprite.center, new Vector2(1.5f, 0.5f));
+        proSprite.Rotate(proSprite.center, timeInSeconds);
 
-        Stroke(4);
+        proSprite.Stroke(4);
     }
 }
