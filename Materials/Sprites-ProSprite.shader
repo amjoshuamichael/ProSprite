@@ -1,4 +1,4 @@
-﻿Shader "Sprites/Texture"
+﻿Shader "Sprites/ProSprite"
 {
     Properties
     {

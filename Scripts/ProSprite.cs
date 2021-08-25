@@ -1,7 +1,5 @@
 ﻿using System;
-using System.IO;
 using UnityEditor;
-using UnityEngine;
 
 namespace UnityEngine.ProSprite {
     [DisallowMultipleComponent]
@@ -94,7 +92,7 @@ namespace UnityEngine.ProSprite {
             spriteRenderer.sprite = generateBlankSpriteAtSize(width, height, TextureFormat.Alpha8);
             spriteRenderer.drawMode = SpriteDrawMode.Sliced;
             spriteRenderer.size = new Vector2(width / pixelsPerUnit, height / pixelsPerUnit);
-            spriteRenderer.material = (Material)AssetDatabase.LoadAssetAtPath($"{packagePath}Materials/Texture.mat", typeof(Material));
+            spriteRenderer.material = (Material)AssetDatabase.LoadAssetAtPath($"{packagePath}Materials/ProSprite.mat", typeof(Material));
         }
 
         private SpriteRenderer GetOrAddRendererComponent() {

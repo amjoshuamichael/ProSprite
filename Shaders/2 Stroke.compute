@@ -7,12 +7,11 @@ int color;
 [numthreads(32, 32, 1)]
 void Stroke(uint3 id : SV_DispatchThreadID) {
     if (Input[id.xy].w == 0) {
-        if (Input[uint2 (id.x - 1, id.y)].w == 1 ||
-            Input[uint2 (id.x + 1, id.y)].w == 1 ||
-            Input[uint2 (id.x, id.y - 1)].w == 1 ||
-            Input[uint2 (id.x, id.y + 1)].w == 1) {
+        bool leftPixel = Input[uint2 (id.x - 1, id.y)].w == 1 && Input[uint2 (id.x - 1, id.y)] != Pallete[color];
+        bool rightPixel = Input[uint2 (id.x + 1, id.y)].w == 1 && Input[uint2 (id.x + 1, id.y)] != Pallete[color];
+        bool downPixel = Input[uint2 (id.x, id.y - 1)].w == 1 && Input[uint2 (id.x, id.y - 1)] != Pallete[color];
+        bool upPixel = Input[uint2 (id.x, id.y + 1)].w == 1 && Input[uint2 (id.x, id.y + 1)] != Pallete[color];
 
-            Input[id.xy] = Pallete[color];
-        }
+        if (leftPixel || rightPixel || downPixel || upPixel) Input[id.xy] = Pallete[color];
     }
 }
