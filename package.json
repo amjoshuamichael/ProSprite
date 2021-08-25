@@ -1,0 +1,19 @@
+{
+  "name": "com.amjoshuamichael.prosprite",
+  "displayName": "ProSprite",
+  "version": "0.2.0",
+  "unity": "2019.3",
+  "description": "A Unity Package designed to procedurally generate pixel art on the fly during gameplay.",
+  "keywords": [
+    "Graphics"
+  ],
+  "category": "Plugins",
+  "license": "GNU",
+  "author": {
+    "name": "amjoshuamichael",
+    "email": "business@amjoshuamichael.com"
+  },
+  "type": "tool",
+  "hideInEditor": false,
+  "unityRelease": "0a10"
+}

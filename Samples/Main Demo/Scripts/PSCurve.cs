@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.ProSprite;
 
 public class PSCurve : MonoBehaviour{
     [SerializeField] private ProSprite proSprite;

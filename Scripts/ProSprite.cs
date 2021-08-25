@@ -1,171 +1,191 @@
-﻿using UnityEngine;
-using UnityEngine.ProSprite;
+﻿using System;
+using System.IO;
+using UnityEditor;
+using UnityEngine;
 
-[RequireComponent(typeof(SpriteRenderer))]
-public class ProSprite : MonoBehaviour {
-    private RenderTexture renderTexture;
-    private SpriteRenderer spriteRenderer;
-    private ComputeBuffer palleteBuffer;
+namespace UnityEngine.ProSprite {
+    [DisallowMultipleComponent]
+    [AddComponentMenu("2D Animation/ProSprite")]
+    [RequireComponent(typeof(SpriteRenderer))]
+    public class ProSprite : MonoBehaviour {
+        private RenderTexture renderTexture;
+        private SpriteRenderer spriteRenderer;
+        private ComputeBuffer palleteBuffer;
 
-    private ComputeShader[] shaders;
-    private int[] kernels;
+        private ComputeShader[] shaders;
+        private int[] kernels;
 
-    private Vector2Int chunkCount;
-    private Vector2Int _center;
-    public Vector2Int center {get {return _center; }}
-    const int pixelsPerUnit = 16;
+        const string packagePath = "Packages/com.amjoshuamichael.prosprite/";
 
-    [SerializeField] public int width = 32;
-    [SerializeField] public int height = 32;
+        private Vector2Int chunkCount;
+        private Vector2Int _center;
+        public Vector2Int center { get { return _center; } }
+        const int pixelsPerUnit = 16;
 
-    private enum S { Clear, Circles, Stroke, Curve, Affine, Texture }
+        [SerializeField] public int width = 32;
+        [SerializeField] public int height = 32;
 
-    private void Reset() => GenerateSpriteRenderer(width, height);
-    private void OnValidate() => GenerateSpriteRenderer(width, height);
+        private enum S { Clear, Circles, Stroke, Curve, Affine, Texture }
 
-    private void Start() {
-        SetupSizeValues(width, height);
+        private void Reset() => GenerateSpriteRenderer(width, height);
+        private void OnValidate() => GenerateSpriteRenderer(width, height);
 
-        spriteRenderer = GetOrAddRendererComponent();
-        GenerateRenderTexture(width, height, spriteRenderer);
+        private void Start() {
+            SetupSizeValues(width, height);
 
-        CreatePalleteBuffer();
-        InstantiateComputeShaders();
-    }
+            spriteRenderer = GetOrAddRendererComponent();
+            GenerateRenderTexture(width, height, spriteRenderer);
 
-    private void OnRenderObject() {
-        Clear();
-    }
+            CreatePalleteBuffer();
+            InstantiateComputeShaders();
+        }
 
-    private void CreatePalleteBuffer() {
-        palleteBuffer = new ComputeBuffer(Pallete.pallete.Length, sizeof(float) * 4);
-        palleteBuffer.SetData(Pallete.pallete);
-    }
+        private void OnRenderObject() {
+            Clear();
+        }
 
-    private void InstantiateComputeShaders() {
-        Object[] shadersAsAssets = Resources.LoadAll("ProSprite/Shaders", typeof(ComputeShader));
-        shaders = new ComputeShader[shadersAsAssets.Length];
-        kernels = new int[shadersAsAssets.Length];
+        private void CreatePalleteBuffer() {
+            palleteBuffer = new ComputeBuffer(Pallete.pallete.Length, sizeof(float) * 4);
+            palleteBuffer.SetData(Pallete.pallete);
+        }
 
-        for (int i = 0; i < shaders.Length; i++)
-            InstantiateComputeShader(shadersAsAssets, i);
-    }
+        private void InstantiateComputeShaders() {
+            Object[] shadersAsAssets = GetComputeShadersAsAssets();
+            shaders = new ComputeShader[shadersAsAssets.Length];
+            kernels = new int[shadersAsAssets.Length];
 
-    private void InstantiateComputeShader(Object[] shadersAsAssets, int index) {
-        shaders[index] = (ComputeShader)shadersAsAssets[index];
-        shaders[index] = Instantiate(shaders[index]);
+            for (int i = 0; i < shaders.Length; i++)
+                InstantiateComputeShader(shadersAsAssets, i);
+        }
 
-        string kernelName = ((S)index).ToString();
-        kernels[index] = shaders[index].FindKernel(kernelName);
+        private static Object[] GetComputeShadersAsAssets() {
+            string[] ShaderNames = Enum.GetNames(typeof(S));
 
-        shaders[index].SetTexture(kernels[index], "Input", renderTexture);
-        shaders[index].SetBuffer(kernels[index], "Pallete", palleteBuffer);
-    }
+            Object[] output = new Object[ShaderNames.Length];
 
-    private void GenerateRenderTexture(int width, int height, SpriteRenderer spriteRenderer) {
-        renderTexture = new RenderTexture(width, height, 1);
-        renderTexture.enableRandomWrite = true;
-        renderTexture.filterMode = FilterMode.Point;
-        spriteRenderer.material.SetTexture("_Texture", renderTexture);
-        RenderTexture.active = renderTexture;
-    }
+            for (int i = 0; i < ShaderNames.Length; i++) {
+                output[i] = AssetDatabase.LoadAssetAtPath($"{packagePath}Shaders/{i} {ShaderNames[i]}.compute", typeof(Object));
+            }
 
-    private void GenerateSpriteRenderer(int width, int height) {
-        spriteRenderer = GetOrAddRendererComponent();
-        spriteRenderer.sprite = generateBlankSpriteAtSize(width, height, TextureFormat.Alpha8);
-        spriteRenderer.drawMode = SpriteDrawMode.Sliced;
-        spriteRenderer.size = new Vector2(width / pixelsPerUnit, height / pixelsPerUnit);
-        spriteRenderer.material = Resources.Load<Material>("ProSprite/Materials/Texture");
-    }
+            return output;
+        }
 
-    private SpriteRenderer GetOrAddRendererComponent() {
-        SpriteRenderer renderer = GetComponent<SpriteRenderer>();
-        if (renderer == null) renderer = gameObject.AddComponent<SpriteRenderer>();
-        return renderer;
-    }
+        private void InstantiateComputeShader(Object[] shadersAsAssets, int index) {
+            shaders[index] = (ComputeShader)shadersAsAssets[index];
+            shaders[index] = Instantiate(shaders[index]);
 
-    private Sprite generateBlankSpriteAtSize(int width, int height, TextureFormat textureFormat) {
-        Texture2D texture = new Texture2D(width, height, textureFormat, true);
-        Rect rect = new Rect(0, 0, width, height);
-        Vector2 anchorPoint = new Vector2(0.5f, 0.5f);
+            string kernelName = ((S)index).ToString();
+            kernels[index] = shaders[index].FindKernel(kernelName);
 
-        return Sprite.Create(texture, rect, anchorPoint, pixelsPerUnit, 0, SpriteMeshType.FullRect);
-    }
+            shaders[index].SetTexture(kernels[index], "Input", renderTexture);
+            shaders[index].SetBuffer(kernels[index], "Pallete", palleteBuffer);
+        }
 
-    private void SetupSizeValues(int width, int height) {
-        chunkCount = new Vector2Int(width / 32, height / 32);
-        _center = new Vector2Int(width / 2, height / 2);
-    }
+        private void GenerateRenderTexture(int width, int height, SpriteRenderer spriteRenderer) {
+            renderTexture = new RenderTexture(width, height, 1);
+            renderTexture.enableRandomWrite = true;
+            renderTexture.filterMode = FilterMode.Point;
+            spriteRenderer.material.SetTexture("_Texture", renderTexture);
+            RenderTexture.active = renderTexture;
+        }
 
-    public void DrawCircles(Circle[] circles) {
-        shaders[(int)S.Circles].SetInt("count", 8);
-        shaders[(int)S.Circles].SetInts("circles", Circle.circleArrayToIntArray(circles));
+        private void GenerateSpriteRenderer(int width, int height) {
+            spriteRenderer = GetOrAddRendererComponent();
+            spriteRenderer.sprite = generateBlankSpriteAtSize(width, height, TextureFormat.Alpha8);
+            spriteRenderer.drawMode = SpriteDrawMode.Sliced;
+            spriteRenderer.size = new Vector2(width / pixelsPerUnit, height / pixelsPerUnit);
+            spriteRenderer.material = (Material)AssetDatabase.LoadAssetAtPath($"{packagePath}Materials/Texture.mat", typeof(Material));
+        }
 
-        DispatchShader((int)S.Circles);
-    }
+        private SpriteRenderer GetOrAddRendererComponent() {
+            SpriteRenderer renderer = GetComponent<SpriteRenderer>();
+            if (renderer == null) renderer = gameObject.AddComponent<SpriteRenderer>();
+            return renderer;
+        }
 
-    public void Stroke(int color) {
-        shaders[(int)S.Stroke].SetInt("color", color);
-        DispatchShader((int)S.Stroke);
-    }
+        private Sprite generateBlankSpriteAtSize(int width, int height, TextureFormat textureFormat) {
+            Texture2D texture = new Texture2D(width, height, textureFormat, true);
+            Rect rect = new Rect(0, 0, width, height);
+            Vector2 anchorPoint = new Vector2(0.5f, 0.5f);
 
-    public void DrawLine(float a, float b, float c, int color, int xMin, int xMax, int yMin, int yMax) {
-        shaders[(int)S.Curve].SetFloat("a", a);
-        shaders[(int)S.Curve].SetFloat("b", b);
-        shaders[(int)S.Curve].SetFloat("c", c);
-        shaders[(int)S.Curve].SetVector("color", Pallete.pallete[color]);
-        shaders[(int)S.Curve].SetInt("xMin", xMin);
-        shaders[(int)S.Curve].SetInt("xMax", xMax);
-        shaders[(int)S.Curve].SetInt("yMin", yMin);
-        shaders[(int)S.Curve].SetInt("yMax", yMax);
-        DispatchShader((int)S.Curve);
-    }
+            return Sprite.Create(texture, rect, anchorPoint, pixelsPerUnit, 0, SpriteMeshType.FullRect);
+        }
 
-    public void Transform(float H, float V, float X, float Y, float A, float B, float C, float D) {
-        shaders[(int)S.Affine].SetFloat("H", H);
-        shaders[(int)S.Affine].SetFloat("V", V);
-        shaders[(int)S.Affine].SetFloat("X", X);
-        shaders[(int)S.Affine].SetFloat("Y", Y);
-        shaders[(int)S.Affine].SetFloat("A", A);
-        shaders[(int)S.Affine].SetFloat("B", B);
-        shaders[(int)S.Affine].SetFloat("C", C);
-        shaders[(int)S.Affine].SetFloat("D", D);
-        DispatchShader((int)S.Affine);
-    }
+        private void SetupSizeValues(int width, int height) {
+            chunkCount = new Vector2Int(width / 32, height / 32);
+            _center = new Vector2Int(width / 2, height / 2);
+        }
 
-    public void Translate(Vector2 position) {
-        Transform(position.x, position.y, 0, 0, 1, 0, 0, 1);
-    }
+        public void DrawCircles(Circle[] circles) {
+            shaders[(int)S.Circles].SetInt("count", 8);
+            shaders[(int)S.Circles].SetInts("circles", Circle.circleArrayToIntArray(circles));
 
-    public void Rotate(Vector2 anchorPoint, float angleInRadians) {
-        float generalScale = Mathf.Cos(angleInRadians);
-        float generalSheer = Mathf.Sin(angleInRadians);
+            DispatchShader((int)S.Circles);
+        }
 
-        Transform(0, 0, anchorPoint.x, anchorPoint.y, generalScale, generalSheer, -generalSheer, generalScale);
-    }
+        public void Stroke(int color) {
+            shaders[(int)S.Stroke].SetInt("color", color);
+            DispatchShader((int)S.Stroke);
+        }
 
-    public void Scale(Vector2 anchorPoint, Vector2 scaleAmount) {
-        Transform(0, 0, anchorPoint.x, anchorPoint.y, 1 / scaleAmount.x, 0, 0, 1 / scaleAmount.y);
-    }
+        public void DrawLine(float a, float b, float c, int color, int xMin, int xMax, int yMin, int yMax) {
+            shaders[(int)S.Curve].SetFloat("a", a);
+            shaders[(int)S.Curve].SetFloat("b", b);
+            shaders[(int)S.Curve].SetFloat("c", c);
+            shaders[(int)S.Curve].SetVector("color", Pallete.pallete[color]);
+            shaders[(int)S.Curve].SetInt("xMin", xMin);
+            shaders[(int)S.Curve].SetInt("xMax", xMax);
+            shaders[(int)S.Curve].SetInt("yMin", yMin);
+            shaders[(int)S.Curve].SetInt("yMax", yMax);
+            DispatchShader((int)S.Curve);
+        }
 
-    public void Scale(Vector2 anchorPoint, float scaleAmount) {
-        Transform(0, 0, anchorPoint.x, anchorPoint.y, scaleAmount, 0, 0, scaleAmount);
-    }
+        public void Transform(float H, float V, float X, float Y, float A, float B, float C, float D) {
+            shaders[(int)S.Affine].SetFloat("H", H);
+            shaders[(int)S.Affine].SetFloat("V", V);
+            shaders[(int)S.Affine].SetFloat("X", X);
+            shaders[(int)S.Affine].SetFloat("Y", Y);
+            shaders[(int)S.Affine].SetFloat("A", A);
+            shaders[(int)S.Affine].SetFloat("B", B);
+            shaders[(int)S.Affine].SetFloat("C", C);
+            shaders[(int)S.Affine].SetFloat("D", D);
+            DispatchShader((int)S.Affine);
+        }
 
-    public void DrawTexture(Texture2D texture) {
-        shaders[(int)S.Texture].SetTexture(kernels[(int)S.Texture], "Tex", texture);
-        DispatchShader((int)S.Texture);
-    }
+        public void Translate(Vector2 position) {
+            Transform(position.x, position.y, 0, 0, 1, 0, 0, 1);
+        }
 
-    private void Clear() {
-        DispatchShader((int)S.Clear);
-    }
+        public void Rotate(Vector2 anchorPoint, float angleInRadians) {
+            float generalScale = Mathf.Cos(angleInRadians);
+            float generalSheer = Mathf.Sin(angleInRadians);
 
-    private void DispatchShader(int index) {
-        if (shaders[index] != null) shaders[index].Dispatch(kernels[index], chunkCount.x, chunkCount.y, 1);
-    }
+            Transform(0, 0, anchorPoint.x, anchorPoint.y, generalScale, generalSheer, -generalSheer, generalScale);
+        }
 
-    private void OnDisable() {
-        palleteBuffer.Dispose();
+        public void Scale(Vector2 anchorPoint, Vector2 scaleAmount) {
+            Transform(0, 0, anchorPoint.x, anchorPoint.y, 1 / scaleAmount.x, 0, 0, 1 / scaleAmount.y);
+        }
+
+        public void Scale(Vector2 anchorPoint, float scaleAmount) {
+            Transform(0, 0, anchorPoint.x, anchorPoint.y, scaleAmount, 0, 0, scaleAmount);
+        }
+
+        public void DrawTexture(Texture2D texture) {
+            shaders[(int)S.Texture].SetTexture(kernels[(int)S.Texture], "Tex", texture);
+            DispatchShader((int)S.Texture);
+        }
+
+        private void Clear() {
+            DispatchShader((int)S.Clear);
+        }
+
+        private void DispatchShader(int index) {
+            if (shaders[index] != null) shaders[index].Dispatch(kernels[index], chunkCount.x, chunkCount.y, 1);
+        }
+
+        private void OnDisable() {
+            palleteBuffer.Dispose();
+        }
     }
 }

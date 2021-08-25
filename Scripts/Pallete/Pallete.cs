@@ -45,7 +45,7 @@ namespace UnityEngine.ProSprite {
 }
 
 static class PalleteSettings {
-    const string palletePath = "ProSprite/Scripts/Pallete/pallete";
+    const string palletePath = "Packages/com.amjoshuamichael.prosprite/Scripts/Pallete/pallete.png";
 
 #if UNITY_EDITOR
     public static void SavePallete(SerializedProperty newPalleteProperty) {
@@ -75,7 +75,7 @@ static class PalleteSettings {
     }
 
     private static string GetFullPalleteAtlasPath() {
-        return Application.dataPath + "/Resources/" + palletePath + ".png";
+        return Path.GetFullPath(palletePath);
     }
 #endif
 
@@ -87,8 +87,7 @@ static class PalleteSettings {
     }
 
     private static Texture2D GetTextureAtlas() {
-        Texture2D texture = new Texture2D(64, 1, TextureFormat.ARGB32, true);
-        texture = (Texture2D)Resources.Load(palletePath);
+        Texture2D texture = (Texture2D)AssetDatabase.LoadAssetAtPath(palletePath, typeof(Texture2D));
         return texture;
     }
 }
